@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 
-import matplotlib.pyplot as plt
 
 ##################### Leitura dos dados de Treino e Teste #####################
 df = pd.read_excel('./371889-tarefa02_treino.xls')                  #le o arquivo xls
@@ -17,9 +16,9 @@ x = x * -1                                                          #multiplica 
 x[:, 1:5] = treino[:,0:4]                                           #copia para as 3 ultimas colunas de 'x' as 3 primeiras de 'treino'
 
 dTreino = d[ 0:25]                                                  
-xTreino = x[ 0:25]                                                  #separa 70% para treino (70% de 35 = 24.5)
-dTeste  = d[25:35]
-xTeste  = x[25:35]                                                  #o restante (30%) para teste
+xTreino = x[ 0:25]                                                  #separa 70% para treino (70% de 30 = 21)
+dTeste  = d[25:30]
+xTeste  = x[25:30]                                                  #o restante (30%) para teste
 
 
 ##################### Leitura dos dados de Operacao ###########################
@@ -39,18 +38,8 @@ def G(u):
     else:
         return  1
 
-uTreino = []
-
-eqws = []
-
 def Eqw(w):
-    p = len(dTreino)
-    eqw = 0
-    for k in range(p):
-        u = np.dot(w.T, xTreino[k])
-        eqw = eqw + ((dTreino[k] - u)**2)
-    eqw = eqw/p
-    return eqw
+    return 1
 
 def Treinar():                                                      #treina o Perceptron e retorna os pesos e n de epocas
     w = np.random.random(5)*2-1
@@ -59,19 +48,27 @@ def Treinar():                                                      #treina o Pe
     
     epoca = 0
     
+    Eant = 0
+    Eatual = 0
+    
     erro = True
     while erro == True:
-        Eant = Eqw(w)
+        #erro = False
+        epoca = epoca + 1
+        
+        Eant = Eatual
+        
+        er = 0
         
         for k in range(len(dTreino)):                               #executa 1 vez o treino em todos valores de treino
             u = np.dot(w.T, xTreino[k])                             # u = w0*x0 + w1*x1 + w2*x2 + w3*x3
             
+            #w0 = w0 + n*(d0 - y)*x0; w1 = w1 + n*(d1 - y)*x1 ... 
             var = n*(dTreino[k] - u)                                #fator de correcao dos pesos
             w = w + np.dot(var, xTreino[k])                         #multiplica o vetor 'x' por 'var' e soma no vetor 'w'
-        epoca = epoca + 1
-        
-        Eatual = Eqw(w)
-        eqws.append(Eatual)
+            
+            er = er + ((dTreino[k] - u)**2)
+        Eatual = er/len(dTreino)
         
         dE = Eatual - Eant
         if dE < 0:
@@ -111,9 +108,8 @@ w, epocas = Treinar()               #treina
 errTeste, resTeste = Testar(w)      #testa
 resOp = Operacao(w)                 #opera
 
-print('\nCautela!')
-print('n de epocas esta muito alto')
-print('nao esta pronto!!!!!\n\n\n')
+
+print('\nnao esta pronto!!!!!\n\n\n')
 
 
 #imprime os resultados
@@ -121,7 +117,3 @@ print('\nteste: ('+str(errTeste)+' erros)')
 print('obtido:   '+str(resTeste))
 print('desejado: '+str(dTeste))
 print('\nOperacao: '+str(resOp))
-
-plt.plot(eqws)
-plt.ylabel('Eqws')
-plt.show()
