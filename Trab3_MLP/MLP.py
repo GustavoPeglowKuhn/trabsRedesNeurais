@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import math
 import matplotlib.pyplot as plt
 
 aprendizado = 0.1
@@ -24,18 +23,15 @@ x[:, :3] = dados[:, :3]
 
 
 def g(x):
-	#return 1. / (1. + np.exp(-x))
-	return 1 / (1 + math.exp(-x))	
+	return 1. / (1. + np.exp(-x))	
 
 def dg(x):
-	#_tmp = g(x)
-	#return _tmp*(1-_tmp)
 	return g(x)*(1-g(x))
 		
 ###############################################################################
 ############################### treino #
-w1 = np.zeros((10, 4))+.5
-w2 = np.zeros((11))+.5
+w1 = np.random.random([10, 4])*2-1
+w2 = np.random.random(11)*2-1
 
 l1 = np.zeros(10)
 l2 = 0
