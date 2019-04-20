@@ -1,15 +1,16 @@
 import pandas as pd
 import numpy as np
+#import math
 import matplotlib.pyplot as plt
 
-aprendizado = 0.1
+n = 0.1
 eps = 1e-6
 
 
 nIn  = 3
 nOut = 1
 camadas = 2         #1 ocultas e 1 de saida
-n = [10, nOut]
+nNeuronios = [10, nOut]
 
 
 
@@ -17,64 +18,111 @@ dados = np.array(pd.read_excel('373925-Treinamento_projeto_1_MLP.xls'))
 nAmostras = len(dados)
 d = dados[:, 3]
 x = np.ones([len(dados), len(dados[0])])
-x[:, 3] = x[:, 3]*-1
-x[:, :3] = dados[:, :3]
+x[:, 0] = x[:, 0]*-1
+x[:, 1:4] = dados[:, :3]
 
 
 
 def g(x):
-	return 1. / (1. + np.exp(-x))	
+	return 1. / (1. + np.exp(-x))
+	#return math.tanh(x)
 
 def dg(x):
 	return g(x)*(1-g(x))
-		
-###############################################################################
+	#return 1-(math.tanh(x)**2)
+
+def Y(_w, _x, nI):
+	_l = np.zeros(nI)
+	_l = np.dot(_w, _x)
+	_y = np.zeros(nI+1)
+	_y[0] = -1
+	for i in range(len(_l)):
+		_y[i+1] = g(_l[i])
+	return _l, _y
+
+def Em(_d, _y, _p):
+	res = 0
+	for i in range(_p):
+		res = res + 0.5*((_d[i]-_y[i])**2)
+	return res/_p
+
 ############################### treino #
-w1 = np.random.random([10, 4])*2-1
-w2 = np.random.random(11)*2-1
+w = [0, np.random.random([nNeuronios[0], nIn+1])*2-1, np.random.random([nOut, nNeuronios[0]+1])*2-1]
+l = [0,               np.zeros(nNeuronios[0]),   np.zeros(nNeuronios[1])]
+y = [np.zeros(nIn+1), np.zeros(nNeuronios[0]+1), np.zeros(nNeuronios[1]+1)]
 
-l1 = np.zeros(10)
-l2 = 0
 
-y1 = np.zeros(11)
-y2 = 0
-wn1 = w1.copy()
-wn2 = w2.copy()
+w = [0, 
+	 np.array([[ 6.79187995e-01, -5.13015456e-01, -1.32749444e-01, 9.56402741e-01],
+		[-4.43741070e-01, -5.36158120e-01, -8.76989330e-01,
+		  1.02935980e-01],
+		[-9.68866197e-01, -8.51903155e-01, -8.75329113e-01,
+		 -9.18558625e-01],
+		[-6.98148285e-01,  2.27233051e-01,  5.35159598e-01,
+		 -2.10754033e-01],
+		[-7.15788753e-01,  1.04130252e-01, -8.54390866e-01,
+		 -5.26829315e-02],
+		[ 5.14693188e-01,  8.07540584e-01, -9.23034503e-01,
+		  5.47426165e-01],
+		[ 3.99539513e-01,  5.39859110e-01, -2.85016027e-01,
+		  9.85265915e-01],
+		[-6.60281553e-01, -5.88052569e-01,  5.68015104e-01,
+		 -4.55039472e-01],
+		[ 6.94302155e-01,  5.78379096e-01, -5.51528374e-01,
+		 -7.22510774e-01],
+		[ 2.16244125e-01, -3.90167623e-01, -8.38588366e-04,
+		  8.79687807e-01]]), 
+	 np.array([[ 0.70093413,  0.18212131,  0.03674828, -0.29695673, -0.43768653,
+		 -0.57053749,  0.75639604,  0.71644495, -0.42575612,  0.34764752,
+		  0.98793837]])]
+#w = [0, np.ones([nNeuronios[0], nIn+1]), np.ones([nOut, nNeuronios[0]+1])]
 
+
+w0 = w.copy()
+saidas = np.zeros(nAmostras)
 epocas = 0
-E = 0
-Eant = 1
+continuar = True
+E = Eant = 0
 Elist = []
 
-s1 = np.ones((10))
-
-while (abs(Eant-E)>eps and epocas < 3000):
+while continuar:
 	Eant = E
-	E = 0
-
-	for k in range(200):
+	for amostra in range(nAmostras):
 		############################## Forward ###
-		l1 = np.dot(w1, x[k])
-		for i in range(10): y1[i] = g(l1[i])
-		y1[10] = -1
-		l2 = np.dot(w2, y1)
-		y2 = g(l2)
+		y[0] = x[amostra]
+
+		l[1], y[1] = Y(w[1], y[0], len(l[1]))
+		l[2], y[2] = Y(w[2], y[1], len(l[2]))
+		saidas[amostra] = y[2][1]
 
 		############################## Backward ###
-		s2 = (d[k] - y2) * dg(l2)
-		wn2 = w2 + (aprendizado * s2 * y1)
+		sigma2 = (d[amostra]-y[2][1]) * dg(l[2])
+		dw2 = n * sigma2 * y[1][:]
 		
-		for i in range(10):
-			s1[i] = (s2 * w2[i]) * dg(l1[i])
-			wn1[i] = w1[i] + (aprendizado * s1[i] * x[k])
-
-		w1 = wn1
-		w2 = wn2
-
-		E = E + 0.5*((d[k] - y2)**2)
-	E = E/200
+		#de camada 2 para a 1		
+		sigma1 = np.zeros(nNeuronios[0])
+		for i in range(nNeuronios[0]):
+			sigma1[i] = -sigma2 * w[2][0,i+1] * dg(l[1][i])
+		
+		dw1 = np.zeros([nNeuronios[0], nIn+1])
+		for i in range(nNeuronios[0]):
+			dw1[i,:] = n * sigma1[i] * y[0][:]
+		
+		
+		w[1]      = w[1]      + dw1
+		w[2][0,:] = w[2][0,:] + dw2
+		
+	for amostra in range(nAmostras):
+		y[0] = x[amostra]
+		l[1], y[1] = Y(w[1], y[0], len(l[1]))
+		l[2], y[2] = Y(w[2], y[1], len(l[2]))
+		saidas[amostra] = y[2][1]
+	
+	E = Em(d, saidas, nAmostras)
 	Elist.append(E)
-	epocas = epocas +1
+
+	epocas = epocas+1
+	continuar = abs(Eant-E)>eps
 
 
 ###############################################################################
@@ -87,22 +135,24 @@ xt = np.ones([len(dadosTeste), len(dadosTeste[0])])
 xt[:, 0] = xt[:, 0]*-1
 xt[:, 1:] = dadosTeste[:, :3]
 
-dt = d[:20]
-xt = x[:20,:]
+lt = [0,               np.zeros(nNeuronios[0]),   np.zeros(nNeuronios[1])]
+yt = [np.zeros(nIn+1), np.zeros(nNeuronios[0]+1), np.zeros(nNeuronios[1]+1)]
 
+#res = [dt, np.zeros(nTeste)]
 res = np.zeros([2,nTeste])
 res[0,:] = dt
-l1t = np.zeros(10)
-y1t = np.zeros(11)
-for k in range(20):			## operacao
-	############################## Forward ###
-	l1t = np.dot(w1, xt[k])
-	for i in range(10): y1t[i] = g(l1t[i])
-	y1t[10] = -1
-	l2t = np.dot(w2, y1t)
-	res[1,k] = g(l2t)
 
-print(np.matrix(res.T))
+for amostra in range(nTeste):
+	yt[0] = x[amostra]
+
+	lt[1], yt[1] = Y(w[1], yt[0], len(lt[1]))
+	lt[2], yt[2] = Y(w[2], yt[1], len(lt[2]))
+	
+	res[1,amostra] = yt[2][1]
+	
+
+
+print(np.matrix(res.T*10))
 
 plt.plot(Elist)
 plt.ylabel('Elist')
