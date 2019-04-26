@@ -19,7 +19,7 @@ epocasMax = 1000		#limite de epocas para o treino
 
 nIn, nOut =  15, 1
 camadas = 2         #1 ocultas e 1 de saida
-n = [nIn+5, nOut]
+n = [25, nOut]
 
 def g(x):
 	return 1. / (1. + np.exp(-x))
@@ -28,9 +28,13 @@ def dg(x):
 	return g(x)*(1.-g(x))
 
 
-x, size = xTreino, sTreino
 ############################################################
 ############  Treino
+size = sTreino
+x = np.zeros([size+nIn+1, 1])
+x[:size] = xTreino
+x[size:] = xTreino[:nIn+1]
+
 w = [np.random.random([n[0], nIn+1])*2-1, np.random.random([n[1], n[0]+1])*2-1]
 w0 = w.copy()
 wn = w.copy()
@@ -51,7 +55,7 @@ while (abs(Eant-E)>Emax and epocas < epocasMax):
 	Eant = E
 	E = 0
 
-	for i in range(size-(nIn+1)):	
+	for i in range(size):	
 		wa2 = wa1.copy()
 		wa1 =   w.copy()
 		
@@ -81,7 +85,7 @@ while (abs(Eant-E)>Emax and epocas < epocasMax):
 		w[1] = wn[1] + momentum * (wa1[1] - wa2[1])
 		#w = wn
 	
-	for i in range(size-(nIn+1)):
+	for i in range(size):
 		xt = x[i:i+nIn+1].T.copy()
 		xt[0, nIn] = -1
 		d = x[i+nIn]
@@ -100,22 +104,25 @@ while (abs(Eant-E)>Emax and epocas < epocasMax):
 		j=0	#for j in range(nOut):
 		er = er + ((d - y[1][j])**2)
 		E = E + 0.5*er
-	E = E/(size-(nIn+1))
+	E = E/size
 	Elist.append(E)
 	epocas = epocas +1
 
 
 ############################################################
 ############  Teste
-x, size = xTeste,  sTeste
+size =  sTeste
+x = np.zeros([size+nIn+1, 1])
+x[:size] = xTeste
+x[size:] = xTeste[:nIn+1]
 
-res = np.zeros([size-(nIn+1), 2])
+res = np.zeros([size, 2])
 #res[:, :nOut] = d
 E = 0
 eam = 0
 l = [np.zeros(n[0]),   np.zeros(n[1])]
 y = [np.zeros(n[0]+1), np.zeros(n[1])]
-for i in range(size-(nIn+1)):
+for i in range(size):
 	xt = x[i:i+nIn+1].T.copy()
 	xt[0, nIn] = -1
 	d = x[i+nIn]
@@ -138,8 +145,8 @@ for i in range(size-(nIn+1)):
 	j = 0
 	er = ((d - y[1][j])**2)
 	E = E + 0.5*er
-E = E/(size-(nIn+1))
-eam = eam/(size-(nIn+1))
+E = E/size
+eam = eam/size
 
 
 print(np.matrix(res))
