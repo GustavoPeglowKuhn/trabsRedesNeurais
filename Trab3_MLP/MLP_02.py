@@ -17,11 +17,22 @@ def importData(file, _nIn, _nOut):
 xTreino, dTreino, sTreino, nIn, nOut = importData('373926-Treinamento_projeto_2_MLP.xls', 4, 3)
 xTeste,  dTeste,  sTeste,  nIn, nOut  = importData('373923-Teste_projeto_2_MLP.xls', 4, 3)
 
+#x = np.array([[0,0,-1],
+#			  [0,1,-1],
+#			  [1,0,-1],
+#			  [1,1,-1]])
+#d = np.array([[1,0,0,1],
+#			  [0,1,1,1]]).T
+#xTreino = xTeste = x
+#dTreino = dTeste = d
+#sTreino = sTeste = 4
+#nIn, nOut = 2, 2
+
 ###caracteristicas da rede
 aprendizado = 0.1
 momentum = 0.9
-Emax = 1e-6
-epocasMax = 500		#limite de epocas para o treino
+Emax = 1e-7
+epocasMax = 10000		#limite de epocas para o treino
 
 camadas = 2         #1 ocultas e 1 de saida
 n = [15, nOut]
@@ -36,26 +47,37 @@ def dg(x):
 x, d, size = xTreino, dTreino, sTreino
 ############################################################
 ############  Treino
-w = [np.random.random([n[0], nIn+1])*2-1, np.random.random([n[1], n[0]+1])*2-1]
+w = []		#w = [np.random.random([n[0], nIn+1])*2-1, np.random.random([n[1], n[0]+1])*2-1]
+w.append(np.random.random([n[0], nIn+1])*2-1)
+for j in range(1, camadas):
+	w.append(np.random.random([n[j], n[j-1]+1])*2-1)
+
+l = []		#l = [np.zeros(n[0]),   np.zeros(n[1])]
+for j in range(camadas):
+	l.append(np.zeros(n[j]))
+
+y = []		#y = [np.zeros(n[0]+1), np.zeros(n[1])]
+for j in range(camadas-1):
+	y.append(np.zeros(n[j]+1))
+y.append(np.zeros(n[camadas-1]))
+
+s = []		#s = [np.ones((n[0])), np.ones((n[1]))]
+for j in range(camadas):
+	s.append(np.ones((n[j])))
+
 w0 = w.copy()
 wn = w.copy()
 wa1 = w.copy()
 wa2 = w.copy()
-l = [np.zeros(n[0]),   np.zeros(n[1])]
-y = [np.zeros(n[0]+1), np.zeros(n[1])]
 
 epocas = 0
-
 E = 0
 Eant = 1
 Elist = []
 
-s = [np.ones((n[0])), np.ones((n[1]))]
-
 while (abs(Eant-E)>Emax and epocas < epocasMax):
 	Eant = E
 	E = 0
-
 
 	for i in range(size):	
 		wa2 = wa1.copy()
@@ -66,22 +88,29 @@ while (abs(Eant-E)>Emax and epocas < epocasMax):
 		for j in range(n[0]): 
 			y[0][j] = g(l[0][j])
 		y[0][n[0]] = -1
-		l[1] = np.dot(w[1], y[0])
-		for j in range(n[1]): 
-			y[1][j] = g(l[1][j])
+		for c in range(1, camadas):
+			l[c] = np.dot(w[c], y[c-1])
+			for j in range(n[c]): 
+				y[c][j] = g(l[c][j])
 
 		############################## Backward ###
-		for j in range(n[1]):
-			s[1][j] = (d[i][j] - y[1][j]) * dg(l[1][j])
-			wn[1][j] = w[1][j] + (aprendizado * s[1][j] * y[0][j])
+		c = camadas - 1
+		for j in range(n[c]):
+			s[c][j] = (d[i][j] - y[c][j]) * dg(l[c][j])
+			wn[c][j] = w[c][j] + (aprendizado * s[c][j] * y[c-1][j])
 
+		for c in range(camadas-2, 0, -1):
+			for j in range(n[c]):
+				s[c][j] = np.dot(s[c+1], w[c+1][:, j]) * dg(l[c][j])
+				wn[c][j] = w[c][j] + (aprendizado * s[c][j] * y[c-1][j])
+		
 		for j in range(n[0]):
 			s[0][j] = np.dot(s[1], w[1][:, j]) * dg(l[0][j])
 			wn[0][j] = w[0][j] + (aprendizado * s[0][j] * x[i])
 		
-		w[0] = wn[0] + momentum * (wa1[0] - wa2[0])
-		w[1] = wn[1] + momentum * (wa1[1] - wa2[1])
-		#w = wn
+		
+		for c in range(camadas):
+			w[c] = wn[c] + momentum * (wa1[c] - wa2[c])
 	
 	for i in range(size):
 		############################## Forward ###
@@ -89,13 +118,14 @@ while (abs(Eant-E)>Emax and epocas < epocasMax):
 		for j in range(n[0]): 
 			y[0][j] = g(l[0][j])
 		y[0][n[0]] = -1
-		l[1] = np.dot(w[1], y[0])
-		for j in range(n[1]): 
-			y[1][j] = g(l[1][j])
+		for c in range(1, camadas):
+			l[c] = np.dot(w[c], y[c-1])
+			for j in range(n[c]): 
+				y[c][j] = g(l[c][j])
 			
 		er = 0
 		for j in range(nOut):
-			er = er + ((d[i][j] - y[1][j])**2)
+			er = er + ((d[i][j] - y[camadas-1][j])**2)
 		E = E + 0.5*er
 	E = E/size
 	Elist.append(E)
@@ -108,27 +138,36 @@ x, d, size = xTeste,  dTeste,  sTeste
 
 res = np.zeros([size, 2*nOut])
 res[:, :nOut] = d
+resSat = res.copy()
 E = 0
-l = [np.zeros(n[0]),   np.zeros(n[1])]
-y = [np.zeros(n[0]+1), np.zeros(n[1])]
+
+l = []		#l = [np.zeros(n[0]),   np.zeros(n[1])]
+for j in range(camadas):
+	l.append(np.zeros(n[j]))
+y = []		#y = [np.zeros(n[0]+1), np.zeros(n[1])]
+for j in range(camadas-1):
+	y.append(np.zeros(n[j]+1))
+y.append(np.zeros(n[camadas-1]+1))
+
 for i in range(size):
 	############################## Forward ###
 	l[0] = np.dot(w[0], x[i])
 	for j in range(n[0]): 
 		y[0][j] = g(l[0][j])
 	y[0][n[0]] = -1
-	l[1] = np.dot(w[1], y[0])
-	for j in range(n[1]): 
-		y[1][j] = g(l[1][j])
-	for j in range(n[1]):
-		if y[1][j] < 0.5:
-			res[i, nOut+j] = 0
+	for c in range(1, camadas):
+		l[c] = np.dot(w[c], y[c-1])
+		for j in range(n[c]): 
+			y[c][j] = g(l[c][j])
+	for j in range(n[camadas-1]):
+		if y[camadas-1][j] < 0.5:
+			resSat[i, nOut+j] = 0
 		else:
-			res[i, nOut+j] = 1
-	#res[i, nOut:] = y[1]
+			resSat[i, nOut+j] = 1
+		res[i, nOut+j] = y[camadas-1][j]
 	er = 0
-	for j in range(n[1]):
-		er = er + ((d[i][j] - y[1][j])**2)
+	for j in range(n[camadas-1]):
+		er = er + ((d[i][j] - y[camadas-1][j])**2)
 		E = E + 0.5*er 
 	E = E + 0.5*er
 E = E/size
@@ -136,7 +175,7 @@ E = E/size
 
 print(np.matrix(res))
 
-print('Eqm: '+str(E)+'    epocas: '+str(epocas))
+print('Eqm: '+str(E)+'    dEqm: '+str(abs(Elist[len(Elist)-1]-Elist[len(Elist)-2]))+'    epocas: '+str(epocas))
 
 plt.plot(Elist)
 plt.ylabel('Elist')
