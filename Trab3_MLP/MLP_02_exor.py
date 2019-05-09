@@ -23,9 +23,11 @@ xTeste,  dTeste,  sTeste,  nIn, nOut  = importData('373923-Teste_projeto_2_MLP.x
 #			  [1,1,-1]])
 #d = np.array([[1,0,0,1],
 #			  [0,1,1,1]]).T
+#
 #xTreino = xTeste = x
 #dTreino = dTeste = d
 #sTreino = sTeste = 4
+
 #nIn, nOut = 2, 2
 
 ###caracteristicas da rede
@@ -79,7 +81,7 @@ while (abs(Eant-E)>Emax and epocas < epocasMax):
 	Eant = E
 	E = 0
 
-	for i in range(size):
+	for i in range(size):	
 		wa2 = wa1.copy()
 		wa1 =   w.copy()
 		
