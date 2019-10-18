@@ -1,0 +1,57 @@
+[System]
+Name='t05_fuzzy'
+Type='mamdani'
+Version=2.0
+NumInputs=3
+NumOutputs=1
+NumRules=11
+AndMethod='min'
+OrMethod='max'
+ImpMethod='min'
+AggMethod='max'
+DefuzzMethod='centroid'
+
+[Input1]
+Name='f0aut'
+Range=[0 400]
+NumMFs=3
+MF1='not':'gbellmf',[55.2804232804233 -3.05 132]
+MF2='capi':'gaussmf',[17.2825751943264 156.9]
+MF3='frat':'gaussmf',[16.8 109.825396825397]
+
+[Input2]
+Name='f0'
+Range=[0 400]
+NumMFs=3
+MF1='frat':'gaussmf',[18.81539882437 117]
+MF2='not':'gbellmf',[55.989417989418 -3.05 138]
+MF3='capi':'gaussmf',[20.1410598354016 162]
+
+[Input3]
+Name='f1f0'
+Range=[0 400]
+NumMFs=3
+MF1='not':'gbellmf',[64.1 -3.05 133.291005291005]
+MF2='frat':'gaussmf',[20.1680224322361 108]
+MF3='capi':'gaussmf',[21.5925462983276 155]
+
+[Output1]
+Name='output1'
+Range=[0 1]
+NumMFs=3
+MF1='frat':'trapmf',[0 0 0.2 0.5]
+MF2='not':'trimf',[0.3 0.5 0.7]
+MF3='capi':'trapmf',[0.5 0.8 1 1]
+
+[Rules]
+1 2 1, 2 (1) : 2
+2 3 3, 3 (1) : 1
+3 1 2, 1 (1) : 1
+3 1 0, 1 (0.5) : 1
+3 0 2, 1 (0.5) : 1
+0 1 2, 1 (0.5) : 1
+0 3 3, 3 (0.5) : 1
+2 0 3, 3 (0.5) : 1
+2 3 0, 3 (0.5) : 1
+3 1 2, 1 (0.2) : 2
+2 3 3, 3 (0.2) : 2
